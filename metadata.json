@@ -1,6 +1,6 @@
 {
   "name": "Hollow Mount",
-  "description": "Imported from GitHub",
+  "description": "Per-app storage isolation, virtual drives, and encrypted file vault for Android.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
