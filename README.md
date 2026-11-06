@@ -1,8 +1,8 @@
 # Hollow Mount
 
-**Hollow Mount** is a privacy and storage isolation suite for Android designed to give you total control over what files, photos, and folders your installed apps can see, create, or modify.
+**Hollow Mount** is an experimental Android storage-mediation app. Its LSPosed hooks and optional root mounts attempt to redirect selected storage paths and APIs; they do not provide a kernel-enforced guarantee that every app access path is isolated.
 
-Instead of giving apps unrestricted access to your entire personal gallery and internal storage, Hollow Mount places each chosen app inside a controlled virtual storage environment—keeping your real photos, documents, and folders completely private and clutter-free.
+Actual behavior depends on Android version, app permissions, device/framework changes, module scope, and the APIs an app uses. Native file access, content providers, and user-granted picker URIs may not follow the same paths as the hooks.
 
 ---
 
@@ -28,7 +28,7 @@ Choose the exact storage behavior for every isolated app:
 - **Separate App Drive**  
   Assigns the app its own dedicated virtual drive (similar to a private SD card). Files created or saved by the app stay strictly inside its own drive and cannot be seen by any other app.
 - **Encrypted Separate Drive**  
-  Protects the app's dedicated drive with **AES-256 encryption**, ensuring sensitive media and documents remain locked and protected at rest.
+  A volume can be sealed into an AES-GCM encrypted archive while detached. The mounted volume is plaintext so the target app can use it; sealing is not continuous encryption, and the Android Keystore key is app-data-bound.
 - **Blank Gallery**  
   Presents an empty photo gallery and folder list to the app so your personal media stays completely unseen while the app continues to work normally.
 - **View Only**  
@@ -42,7 +42,7 @@ Manage all of your isolated storage spaces directly from one unified **Files** h
 - **Hollow Drive & Separate App Drives:** Browse your shared Hollow Drive alongside individual app drives as distinct storage volumes.
 - **Smart Media Categories:** Quickly filter and preview **Images, Videos, Audio, Documents, Downloads, and Archives** inside your isolated drives.
 - **Isolated Gallery Viewer:** Inspect photos and media stored across your virtual drives without mixing them into your personal system gallery.
-- **Encrypted Vault & Secure Shredding:** Lock confidential files with AES-256 protection or permanently shred sensitive data so it cannot be recovered.
+- **Encrypted Vault & best-effort deletion:** Encrypt vault files with AES-GCM. Overwrite-and-unlink is best effort only; Android flash storage, wear levelling, snapshots, and remapped blocks mean this app cannot guarantee forensic erasure.
 - **Full File Operations:** Create folders, import files from your phone into an isolated drive, copy, move, rename, compress/extract archives, and share safely.
 
 ---
@@ -72,7 +72,7 @@ Tailor Hollow Mount's look and home screen presence to match your device:
 
 ## Key Benefits at a Glance
 
-- **Zero Gallery Snooping:** Apps only see the photos and files you explicitly place in their virtual drive.
+- **Storage mediation (experimental):** The app attempts to redirect selected storage paths and APIs; this is not complete isolation and can be bypassed or limited by unhooked paths, permissions, URI grants, or platform changes.
 - **Clean Phone Storage:** Eliminate random app folders and leftover junk from your main storage.
 - **Granular Per-App Control:** Mix and match shared drives, private drives, encrypted drives, or blank galleries for each app.
 - **Effortless File Transfer:** Move files between your real storage, Hollow Drive, and individual app drives anytime using the built-in File Manager.

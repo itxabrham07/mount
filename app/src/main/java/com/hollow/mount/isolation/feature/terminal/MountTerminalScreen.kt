@@ -63,7 +63,7 @@ fun MountTerminalScreen(
     val scheme = MaterialTheme.colorScheme
     val terminalLogs by viewModel.terminalLogs.collectAsState()
     val systemMounts by viewModel.systemMounts.collectAsState()
-    val isLsposedActive by viewModel.isLsposedActive.collectAsState()
+    val moduleLoadedInManagerProcess by viewModel.moduleLoadedInManagerProcess.collectAsState()
 
     var activeTab by remember { mutableIntStateOf(0) }
     val clipboard = LocalClipboardManager.current
@@ -104,8 +104,8 @@ fun MountTerminalScreen(
                 )
             }
             StatusBadge(
-                text = if (isLsposedActive) "Hooked" else "Standby",
-                color = if (isLsposedActive) scheme.primary else scheme.tertiary
+                text = if (moduleLoadedInManagerProcess) "Manager loaded" else "Not observed",
+                color = if (moduleLoadedInManagerProcess) scheme.primary else scheme.tertiary
             )
         }
 

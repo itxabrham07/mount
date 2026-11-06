@@ -123,7 +123,7 @@ class VaultViewModel(
     fun deleteVaultFile(fileItem: VaultFileItem) {
         viewModelScope.launch {
             vaultRepository.deleteVaultFile(fileItem, secureShred = true)
-                .onSuccess { name -> settingsRepository.postStatusMessage("Securely shredded $name from Safe Folder") }
+                .onSuccess { name -> settingsRepository.postStatusMessage("Deleted $name from Safe Folder; flash recovery is not guaranteed") }
                 .onFailure { err -> settingsRepository.postStatusMessage("Delete failed: ${err.message}") }
         }
     }

@@ -151,10 +151,17 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
                 if (!dir.exists()) dir.mkdirs()
                 var cursor: File? = dir
                 while (cursor != null) {
+                    if (rootCeiling != null && cursor.absolutePath == rootCeiling.absolutePath) {
+                        // App-private data must never be made world-accessible to help another UID
+                        // traverse into a fallback directory. Restore the normal owner-only boundary.
+                        cursor.setReadable(true, true)
+                        cursor.setWritable(true, true)
+                        cursor.setExecutable(true, true)
+                        break
+                    }
                     cursor.setReadable(true, false)
                     cursor.setWritable(true, false)
                     cursor.setExecutable(true, false)
-                    if (rootCeiling != null && cursor.absolutePath == rootCeiling.absolutePath) break
                     cursor = cursor.parentFile
                 }
             } catch (_: Throwable) {}
@@ -1113,7 +1120,10 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
                     while (entry != null) {
                         val outFile = File(outFolder, entry.name)
                         // Zip-Slip guard
-                        if (!outFile.canonicalPath.startsWith(canonicalOutRoot)) {
+                        val canonicalOutPath = outFile.canonicalPath
+                        if (canonicalOutPath != canonicalOutRoot &&
+                            !canonicalOutPath.startsWith(canonicalOutRoot + File.separator)
+                        ) {
                             throw SecurityException("Blocked Zip-Slip path traversal: ${entry.name}")
                         }
                         if (entry.isDirectory) {
@@ -1147,6 +1157,7 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch(Dispatchers.IO) {
             val vaultRepo = isoApp?.vaultRepository ?: return@launch
             var lockedCount = 0
+            var removalFailureCount = 0
             for (p in paths) {
                 val f = File(p)
                 if (!f.exists() || !f.isFile) continue
@@ -1171,7 +1182,10 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
                         )
                     )
                     if (shredOriginals) {
-                        com.hollow.mount.isolation.crypto.SecureShredder.shredFile(f)
+                        val removal = com.hollow.mount.isolation.crypto.SecureShredder.shredFile(f)
+                        if (removal !is com.hollow.mount.isolation.util.HollowResult.Success || !removal.data) {
+                            removalFailureCount++
+                        }
                     }
                     lockedCount++
                 } catch (_: Exception) {
@@ -1179,8 +1193,10 @@ class FileManagerViewModel(application: Application) : AndroidViewModel(applicat
                 }
             }
             _uiState.update { it.copy(selectedPaths = emptySet()) }
-            _notice.value = if (shredOriginals) {
-                "Encrypted & shredded $lockedCount file(s) into Private Locker."
+            _notice.value = if (shredOriginals && removalFailureCount > 0) {
+                "Encrypted $lockedCount file(s); original removal failed for $removalFailureCount. Originals may remain."
+            } else if (shredOriginals) {
+                "Encrypted $lockedCount file(s). Originals removed; flash recovery is not guaranteed."
             } else {
                 "Encrypted $lockedCount file(s) into Private Locker."
             }

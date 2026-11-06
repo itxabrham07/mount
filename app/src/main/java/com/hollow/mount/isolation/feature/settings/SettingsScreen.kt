@@ -91,7 +91,7 @@ fun SettingsScreen(
     onOpenDiagnostics: () -> Unit = {}
 ) {
     val scheme = MaterialTheme.colorScheme
-    val isLsposedActive by viewModel.isLsposedActive.collectAsState()
+    val moduleLoadedInManagerProcess by viewModel.moduleLoadedInManagerProcess.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val rootStatus by viewModel.rootStatus.collectAsState()
 
@@ -357,9 +357,9 @@ fun SettingsScreen(
                                                     fontFamily = JakartaFontFamily
                                                 )
                                                 Text(
-                                                    text = if (isLsposedActive) "Module active in LSPosed" else "Module not hooked yet",
+                                                    text = if (moduleLoadedInManagerProcess) "Module loaded in manager process; target hooks unverified" else "Not observed in manager process; target hooks unknown",
                                                     fontSize = 11.sp,
-                                                    color = if (isLsposedActive) scheme.primary else scheme.onSurfaceVariant,
+                                                    color = if (moduleLoadedInManagerProcess) scheme.primary else scheme.onSurfaceVariant,
                                                     fontFamily = JakartaFontFamily
                                                 )
                                             }
@@ -501,7 +501,7 @@ fun SettingsScreen(
                                 "$themeMode • $dyn"
                             }
                             SettingsSection.SYSTEM_DIAGNOSTICS -> {
-                                "Root: $rootStatus • LSPosed: ${if (isLsposedActive) "Active" else "Inactive"}"
+                                "Root: $rootStatus • Module in manager: ${if (moduleLoadedInManagerProcess) "Loaded" else "Not observed"}"
                             }
                         }
                         add {

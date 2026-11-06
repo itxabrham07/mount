@@ -7,27 +7,27 @@ enum class IsolationMode(
 ) {
     SHARED_WORKSPACE(
         title = "Hollow Drive (Default)",
-        description = "Connects this app to Hollow Drive — the default shared virtual storage and gallery used across isolated apps.",
+        description = "Attempts to redirect selected storage APIs to Hollow Drive. This is not complete isolation; behavior depends on hooks, permissions, and device support.",
         badge = "Hollow Drive"
     ),
     SANDBOX_REDIRECT(
         title = "Separate App Drive",
-        description = "Assigns this app its own Separate Drive that appears below Hollow Drive in Files like an SD card.",
+        description = "Attempts to redirect selected storage paths to this app's drive. Unhooked APIs and device-specific behavior may bypass it.",
         badge = "Separate Drive"
     ),
     ENCRYPTED_VAULT(
         title = "Encrypted Separate Drive",
-        description = "Assigns this app an AES-256 encrypted Separate Drive below Hollow Drive in Files.",
+        description = "A detached volume can be sealed as an AES-GCM archive. The volume is plaintext while attached for app use.",
         badge = "Encrypted Drive"
     ),
     FAKE_EMPTY(
         title = "Blank Gallery",
-        description = "Shows an empty gallery and folder list so your personal media stays unseen.",
+        description = "Returns empty results on selected hooked gallery paths. Other APIs, permissions, or providers may still expose media.",
         badge = "Blank Gallery"
     ),
     READ_ONLY(
         title = "View Only",
-        description = "Stops the app from creating extra clutter or hidden folders on your phone.",
+        description = "Attempts to prevent writes on hooked paths; it cannot guarantee that all app write mechanisms are blocked.",
         badge = "View Only"
     )
 }
@@ -43,11 +43,11 @@ enum class MountEngineStatus {
 enum class PickerPolicy(val title: String, val description: String) {
     ALLOW(
         title = "Allow",
-        description = "The system picker opens normally and shows your whole phone. The app only receives what you choose."
+        description = "Allows the system picker. Android generally grants access to the items you choose, subject to the picker and URI grant."
     ),
     BLOCK(
         title = "Block",
-        description = "The system picker is cancelled for isolated apps. They can only use their own in-app gallery, which is isolated."
+        description = "Attempts to cancel recognized system-picker launch routes. Unrecognized picker paths may still work."
     )
 }
 

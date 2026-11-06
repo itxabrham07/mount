@@ -4,46 +4,32 @@ import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import com.hollow.mount.MainActivity
 import com.hollow.mount.isolation.model.IsolationRuleManager
 
 /**
- * High-reliability active heartbeat and status bridge between the Hollow manager app
- * and the LSPosed / Vector Xposed framework module.
+ * Diagnostic bridge for the manager process and the configuration provider.
+ * A successful self-hook only proves that the module ran in the manager process; it does not prove
+ * that a selected target process was injected or that every storage path there is intercepted.
  */
 object IsoVaultHookBridge {
 
     private const val TAG = "IsoVaultHookBridge"
     const val HOOK_SPEC_VERSION = 3
 
-    /**
-     * Hooked at runtime by StorageIsolationHook in zygote / app process.
-     * Returns true when the LSPosed module is loaded and actively intercepting calls.
-     */
+    /** True only when intercepted in the manager process by StorageIsolationHook. */
     @JvmStatic
-    fun isHookActive(): Boolean {
-        return false // Hooked by StorageIsolationHook to return true
-    }
+    fun isHookActive(): Boolean = false
 
-    /**
-     * Hooked at runtime by StorageIsolationHook to return the active module build version.
-     */
+    /** Non-zero only when intercepted in the manager process by StorageIsolationHook. */
     @JvmStatic
-    fun getHookVersion(): Int {
-        return 0 // Hooked by StorageIsolationHook to return HOOK_SPEC_VERSION
-    }
+    fun getHookVersion(): Int = 0
 
-    /**
-     * Hooked at runtime by StorageIsolationHook to return heartbeat millisecond timestamp.
-     */
+    /** Current time only when intercepted in the manager process by StorageIsolationHook. */
     @JvmStatic
-    fun getHeartbeatTimestamp(): Long {
-        return 0L // Hooked by StorageIsolationHook to return System.currentTimeMillis()
-    }
+    fun getHeartbeatTimestamp(): Long = 0L
 
     data class FrameworkStatus(
-        val isHookActive: Boolean,
-        val isSharedPrefsHooked: Boolean,
+        val isModuleLoadedInManagerProcess: Boolean,
         val isProviderAlive: Boolean,
         val hookVersion: Int,
         val lastHeartbeatMs: Long,
@@ -51,16 +37,12 @@ object IsoVaultHookBridge {
     )
 
     /**
-     * Multi-layered diagnostic check:
-     * 1. Direct in-memory method interception via XposedBridge.
-     * 2. XSharedPreferences world-readable mode check.
-     * 3. ContentProvider IPC heartbeat check.
+     * Checks the module's self-hook, config-file readability, and provider liveness separately.
+     * None of these checks proves that a selected target app's storage paths are fully isolated.
      */
     fun checkStatus(context: Context): FrameworkStatus {
-        val hookActive = isHookActive() || MainActivity.isLsposedModuleActiveReal()
-        val prefsHooked = IsolationRuleManager.isXSharedPrefsHooked(context)
+        val moduleLoadedInManager = isHookActive()
         var providerAlive = false
-        var providerVersion = 0
 
         try {
             val providerUri = Uri.parse("content://${IsolationRuleManager.MODULE_PKG}.provider")
@@ -70,32 +52,25 @@ object IsoVaultHookBridge {
                 null,
                 Bundle()
             )
-            if (bundle != null && bundle.getBoolean("alive", false)) {
-                providerAlive = true
-                providerVersion = bundle.getInt("version", 0)
-            }
+            providerAlive = bundle?.getBoolean("alive", false) == true
         } catch (e: Exception) {
             Log.d(TAG, "ContentProvider heartbeat check: ${e.message}")
         }
 
-        val effectiveActive = hookActive || prefsHooked
-        val activeVersion = if (hookActive) getHookVersion() else providerVersion
-        val heartbeat = if (hookActive) getHeartbeatTimestamp() else System.currentTimeMillis()
-
         val summary = when {
-            hookActive && prefsHooked -> "Active (LSPosed hooks & XSharedPrefs operational)"
-            hookActive -> "Active (LSPosed in-memory hooks active)"
-            prefsHooked -> "Active (XSharedPrefs hook bridge operational)"
-            providerAlive -> "Standby (Provider IPC ready, module reboot needed)"
-            else -> "Inactive (Module not loaded or scope not selected)"
+            moduleLoadedInManager ->
+                "Module loaded in manager process. Target-app hook coverage is unverified."
+            providerAlive ->
+                "Provider responds only; LSPosed loading and target-app hook coverage are unverified."
+            else ->
+                "Module not observed in manager process; target-app hook coverage is unknown."
         }
 
         return FrameworkStatus(
-            isHookActive = effectiveActive,
-            isSharedPrefsHooked = prefsHooked,
+            isModuleLoadedInManagerProcess = moduleLoadedInManager,
             isProviderAlive = providerAlive,
-            hookVersion = if (activeVersion > 0) activeVersion else HOOK_SPEC_VERSION,
-            lastHeartbeatMs = heartbeat,
+            hookVersion = if (moduleLoadedInManager) getHookVersion() else 0,
+            lastHeartbeatMs = if (moduleLoadedInManager) getHeartbeatTimestamp() else 0L,
             summary = summary
         )
     }

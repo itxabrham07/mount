@@ -224,16 +224,8 @@ class StorageIsolationHook : IXposedHookLoadPackage, IXposedHookZygoteInit {
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
         val pkg = lpparam.packageName ?: return
 
-        // Self-hook for Manager App to confirm module status (exempted from hiding/spoofing)
+        // Self-hook only indicates module loading in the manager process; it does not attest target-app coverage.
         if (pkg == MODULE_PKG) {
-            for (cls in listOf("com.hollow.mount.MainActivity\$Companion", "com.hollow.mount.MainActivity")) {
-                try {
-                    XposedHelpers.findAndHookMethod(cls, lpparam.classLoader, "isLsposedModuleActiveReal",
-                        object : XC_MethodHook() {
-                            override fun beforeHookedMethod(param: MethodHookParam) { param.result = true }
-                        })
-                } catch (_: Throwable) {}
-            }
             try {
                 val bridgeCls = "com.hollow.mount.isolation.hook.IsoVaultHookBridge"
                 XposedHelpers.findAndHookMethod(bridgeCls, lpparam.classLoader, "isHookActive",

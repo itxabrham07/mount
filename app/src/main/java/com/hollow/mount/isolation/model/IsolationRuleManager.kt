@@ -39,17 +39,6 @@ object IsolationRuleManager {
 
     @SuppressLint("WorldReadableFiles")
     @Suppress("DEPRECATION")
-    fun isXSharedPrefsHooked(context: Context): Boolean {
-        return try {
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_WORLD_READABLE)
-            true
-        } catch (_: Throwable) {
-            false
-        }
-    }
-
-    @SuppressLint("WorldReadableFiles")
-    @Suppress("DEPRECATION")
     fun getReadableSharedPrefs(context: Context): SharedPreferences {
         return try {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_WORLD_READABLE)

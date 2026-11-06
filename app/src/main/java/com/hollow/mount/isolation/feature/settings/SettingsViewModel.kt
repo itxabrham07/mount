@@ -22,7 +22,7 @@ class SettingsViewModel(
 ) : ViewModel() {
 
     val settings: StateFlow<AppSettings> = settingsRepository.settings
-    val isLsposedActive: StateFlow<Boolean> = settingsRepository.isLsposedActive
+    val moduleLoadedInManagerProcess: StateFlow<Boolean> = settingsRepository.moduleLoadedInManagerProcess
     val rootStatus: StateFlow<String> = settingsRepository.rootStatus
     val terminalLogs: StateFlow<List<String>> = settingsRepository.terminalLogs
     val systemMounts: StateFlow<List<MountEntry>> = settingsRepository.systemMounts

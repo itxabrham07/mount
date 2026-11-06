@@ -64,13 +64,6 @@ enum class NavDestination(val label: String) {
 }
 
 class MainActivity : ComponentActivity() {
-    companion object {
-        @JvmStatic
-        fun isLsposedModuleActiveReal(): Boolean {
-            return false // Hooked by StorageIsolationHook on Companion and outer MainActivity
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

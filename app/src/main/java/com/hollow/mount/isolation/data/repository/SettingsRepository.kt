@@ -3,10 +3,8 @@ package com.hollow.mount.isolation.data.repository
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
-import com.hollow.mount.MainActivity
 import com.hollow.mount.isolation.model.AppSettings
 import com.hollow.mount.isolation.model.HollowIconTheme
-import com.hollow.mount.isolation.model.IsolationRuleManager
 import com.hollow.mount.isolation.model.SettingsStore
 import com.hollow.mount.isolation.mount.MountEntry
 import com.hollow.mount.isolation.mount.MountManager
@@ -46,12 +44,8 @@ class SettingsRepository(
     private val _hookStatus = MutableStateFlow(com.hollow.mount.isolation.hook.IsoVaultHookBridge.checkStatus(context))
     val hookStatus: StateFlow<com.hollow.mount.isolation.hook.IsoVaultHookBridge.FrameworkStatus> = _hookStatus.asStateFlow()
 
-    private val _isLsposedActive = MutableStateFlow(
-        com.hollow.mount.isolation.hook.IsoVaultHookBridge.isHookActive() ||
-            MainActivity.isLsposedModuleActiveReal() ||
-            IsolationRuleManager.isXSharedPrefsHooked(context)
-    )
-    val isLsposedActive: StateFlow<Boolean> = _isLsposedActive.asStateFlow()
+    private val _moduleLoadedInManagerProcess = MutableStateFlow(_hookStatus.value.isModuleLoadedInManagerProcess)
+    val moduleLoadedInManagerProcess: StateFlow<Boolean> = _moduleLoadedInManagerProcess.asStateFlow()
 
     private val _rootStatus = MutableStateFlow("Not checked")
     val rootStatus: StateFlow<String> = _rootStatus.asStateFlow()
@@ -91,7 +85,7 @@ class SettingsRepository(
                 _hookStatus.value = status
                 _systemMounts.value = MountManager.readSystemMounts()
                 _selinuxStatus.value = MountManager.getSelinuxStatus()
-                _isLsposedActive.value = status.isHookActive
+                _moduleLoadedInManagerProcess.value = status.isModuleLoadedInManagerProcess
             }
         }
     }

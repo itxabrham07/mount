@@ -148,7 +148,10 @@ class VaultRepository(
                 }
             }
             if (deleteOriginal) {
-                com.hollow.mount.isolation.crypto.SecureShredder.shredFile(sourceFile)
+                val removal = com.hollow.mount.isolation.crypto.SecureShredder.shredFile(sourceFile)
+                if (removal !is com.hollow.mount.isolation.util.HollowResult.Success || !removal.data) {
+                    throw IllegalStateException("Encrypted copy was saved, but the original could not be removed.")
+                }
             }
             onProgress?.invoke(1f)
             name
@@ -202,9 +205,14 @@ class VaultRepository(
         runHollowCatching("VaultRepository") {
             val file = File(item.physicalPath)
             if (secureShred) {
-                com.hollow.mount.isolation.crypto.SecureShredder.shredFile(file)
+                val removal = com.hollow.mount.isolation.crypto.SecureShredder.shredFile(file)
+                if (removal !is com.hollow.mount.isolation.util.HollowResult.Success || !removal.data) {
+                    throw IllegalStateException("Vault file could not be removed; its database record was kept.")
+                }
             } else {
-                file.delete()
+                if (!file.delete() && file.exists()) {
+                    throw IllegalStateException("Vault file could not be removed; its database record was kept.")
+                }
             }
             dao.deleteVaultFile(item.id)
             item.relativePath.substringAfterLast('/')
